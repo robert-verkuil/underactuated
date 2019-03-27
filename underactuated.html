@@ -6,310 +6,7 @@
     <title>Underactuated Robotics</title>
     <meta name="Underactuated Robotics" content="text/html; charset=utf-8;" />
 
-    <script type="text/javascript">
-      function getParameterByName(name) {
-        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-          results = regex.exec(location.search);
-        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-      }
-
-      function chapterNumberToID(number) {
-        if (number<0) { console.error("Bad chapter number"); }
-        var chapters = document.getElementsByClassName("chapter");
-        if ((number-1) < chapters.length) {
-          return chapters[number-1].id;
-        }
-        console.error("Bad chapter number");
-      }
-      function chapterIDToNumber(id) {
-        id = id.toLowerCase();
-        var chapters = document.getElementsByClassName("chapter");
-        for (j=0; j<chapters.length; j++) {
-          if (chapters[j].id.toLowerCase() === id) {
-            return j+1;
-          }
-        }
-        console.error("Bad chapter ID");
-        return -1;
-      }
-
-      function setPlatform(is_mac) {  // else display linux
-        if (is_mac) {
-          to_show = document.getElementsByClassName("mac");
-          to_hide = document.getElementsByClassName("linux");
-        } else {
-          to_show = document.getElementsByClassName("linux");
-          to_hide = document.getElementsByClassName("mac");
-        }
-        for (i=0; i<to_show.length; i++) {
-              to_show[i].style.display = "inline";
-        }
-        for (i=0; i<to_hide.length; i++) {
-          to_hide[i].style.display = "none";
-        }
-      }
-
-      function revealChapters() {
-        // generate table of contents
-        {
-
-          var i,j;
-
-          var toc = "<h1>Table of Contents</h1>\n<ul>\n<li><a href=#preface>Preface</a></li>\n";
-          var chapters = document.getElementsByClassName("chapter");
-          var app = document.getElementsByTagName("appendix");
-          var start_appendix = chapters.length - app[0].getElementsByClassName("chapter").length;
-          var current_part = chapters[0].parentNode;
-          var part_number = 1;
-
-          var list_of_drake_examples = "";
-          var bib = new Map();
-
-          // Set platform to linux unless I detect mac.
-          setPlatform(navigator.appVersion.indexOf("Mac")!=1);
-
-          for (i = 0; i < chapters.length; i++) {
-            var titles=chapters[i].getElementsByTagName("h1");
-            if (!chapters[i].id) {
-              chapters[i].id = "chap"+(i+1);
-            }
-//            toc = toc + "<li><a href=#"+chapters[i].id+">";
-            if (chapters[i].parentNode != current_part) {
-              current_part = chapters[i].parentNode;
-              part_number += 1;
-              if (current_part.className=="part") {
-                toc = toc + "<p style=\"margin-bottom: 0; text-decoration: underline; font-variant: small-caps;\"><b>" + current_part.getAttribute("title") + "</b></p>\n";
-              }
-            }
-
-//            toc = toc + chapters[i].parentNode.tagName.toLowerCase();
-            var chapter_link = "<li><a href=underactuated.html?chapter="+chapterNumberToID(i+1)+">";
-            if (chapterNumberToID(i+1) === "bib") {
-              chapter_link = "<p/>" + chapter_link;
-            } else if (chapters[i].parentNode.tagName.toLowerCase() ==
-                    "appendix") {
-              chapter_link += "Appendix " +
-                      String.fromCharCode(64 + i+1-start_appendix) + ": ";
-            } else {
-              chapter_link += "Chapter " + (i+1) + ": ";
-            }
-            chapter_link += titles[0].innerHTML + "</a>\n";
-            toc += chapter_link;
-
-            var sections = chapters[i].getElementsByTagName("section");
-            var level=0;
-            for (j=0; j<sections.length; j++) {
-              if (sections[j].getAttribute("data-type")=="sect1") {
-                while (level<1) { toc += "<ul>\n"; level += 1; }
-                while (level>1) { toc += "</ul>\n"; level -= 1; }
-              } else if (sections[j].getAttribute("data-type")=="sect2") {
-                while (level<2) { toc += "<ul>\n"; level += 1; }
-                while (level>2) { toc += "</ul>\n"; level -= 1; }
-              } /*
-              else if (sections[j].getAttribute("data-type")=="sect3") {
-                while (level<3) { toc += "<ul>\n"; level += 1; }
-                while (level>3) { toc += "</ul>\n"; level -= 1; }
-              } */
-              else { continue; }
-              toc += "<li>" + sections[j].getElementsByTagName("h1")[0].innerHTML + "</li>\n";
-            }
-            while (level>0) { toc += "</ul>\n"; level -= 1; }
-
-            toc += "</li>\n";
-
-            // TODO: only do this work if I'm actually rendering the output (current_chapter id === drake)
-            if (true) { // then I'm writing the drake example list, too
-              var examples = chapters[i].getElementsByClassName("drake");
-              if (examples.length>0) {
-                list_of_drake_examples += chapter_link + "<ul>";
-                for (j=0; j<examples.length; j++) {
-                  var name = examples[j].getElementsByTagName("h1");
-                  if (name.length>0) {
-                    list_of_drake_examples += "<li>"+name[0].innerHTML+"</li>";
-                  }
-                }
-                list_of_drake_examples += "</ul>\n";
-              }
-
-            }
-
-          }
-
-          toc = toc + "</ul>\n";
-          document.getElementById("table_of_contents").innerHTML = toc;
-        }
-
-        var elibTags = document.getElementsByTagName('elib');
-        for (i = 0; i < elibTags.length; i++) {
-            var c = elibTags[i].innerHTML;
-            var str = "";
-            var index;
-            c.split("+").forEach(function(b) {
-              if (bib.has(b)) {
-                index = bib.get(b);
-              } else {
-                index = bib.size+1;
-                bib.set(b, index);
-              }
-              if (str.length > 0) {
-                str += ", ";
-              }
-              str += '<a target="_blank" href="http://groups.csail.mit.edu/locomotion/elib.cgi?b=' + b + '">' + index + '</a>';
-            });
-          elibTags[i].innerHTML = '[' + str + ']';
-        }
-
-
-        MathJax.Hub.Queue(["Typeset",MathJax.Hub,"mathjax_setup"]);
-
-        var current_chapter = getParameterByName("chapter");
-
-        if (current_chapter) {
-          if (isNaN(current_chapter)) {
-            current_chapter = chapterIDToNumber(current_chapter);
-          } else {
-            current_chapter = Number(current_chapter);
-          }
-
-          document.getElementById("preface").style.display = "none";
-          document.getElementById("table_of_contents").style.display = "none";
-          //document.getElementById("debug_output").innerHTML="displaying only chapter " + chapter + " of " + chapters.length;
-          for (i = 0; i < chapters.length; i++) {
-            if ((i+1) != current_chapter) {
-              chapters[i].style.display = "none";
-            } else {
-              chapters[i].style.display = "inline";
-
-              // load images/videos for this chapter only
-              // TODO(russt): consider adding a lint test to make sure all
-              // relevant elements are typed in as data-src instead of src.
-              var images = chapters[i].getElementsByTagName("img");
-              for (j=0; j<images.length; j++) {
-                if (images[j].hasAttribute("data-src")) {
-                  images[j].setAttribute("src",images[j].getAttribute("data-src"));
-                }
-              }
-              // load images/videos for this chapter only
-              var videos = chapters[i].getElementsByTagName("video");
-              for (j=0; j<videos.length; j++) {
-                if (videos[j].hasAttribute("data-src")) {
-                  videos[j].setAttribute("src",videos[j].getAttribute("data-src"));
-                }
-                var extra_sources = videos[j].getElementsByTagName("source");
-                for (k=0; k<extra_sources.length; k++) {
-                  if (extra_sources[k].hasAttribute("data-src")) {
-                    extra_sources[k].setAttribute("src", extra_sources[k].getAttribute("data-src"));
-                  }
-                }
-              }
-              var iframes = chapters[i].getElementsByTagName("iframe");
-              for (j=0; j<iframes.length; j++) {
-                if (iframes[j].hasAttribute("data-src")) {
-                    iframes[j].setAttribute("src",iframes[j].getAttribute("data-src"));
-                }
-              }
-
-              var codeTags = chapters[i].getElementsByTagName('pysrcinclude');
-              for (j = 0; j < codeTags.length; j++) {
-                  var file = 'src/' + codeTags[j].innerHTML;
-                  var xhttp = new XMLHttpRequest();
-                  xhttp.onreadystatechange = ( function (j) { return function() {
-                      if (this.readyState == 4 && this.status == 200) {
-                          var text = hljs.highlight('python',this.responseText,true)
-                          codeTags[j].innerHTML =
-                              '<div><pre><code class="python">'+text.value+'</code></pre></div>';
-                      }
-                  } })(j);
-                  xhttp.overrideMimeType('text/plain');
-                  xhttp.open('GET', file, true);
-                  // note: only works for files in or below current directory http://jquery-howto.blogspot.com/2008/12/access-to-restricted-uri-denied-code.html
-                  xhttp.send();
-              }
-
-              var pysrcTags = chapters[i].getElementsByTagName('pysrc');
-              for (j = 0; j < pysrcTags.length; j++) {
-                  var file = pysrcTags[j].innerHTML;
-                  // TODO(russt): Consider checking that the file exists.
-                  var tmp = '<p><pre style="margin-left:6px"><code>python <a href="src/'+ file + '">' + file + '</a>';
-                  if (pysrcTags[j].hasAttribute("args")) {
-                      tmp += ' '+ pysrcTags[j].getAttribute("args");
-                  }
-                  pysrcTags[j].innerHTML = tmp + '</code></pre></p>';
-              }
-
-
-//              document.getElementById("debug_output").innerHTML="got here";
-              var display_num = i;
-              if (i>=start_appendix) {
-                display_num=i-start_appendix;
-              }
-              chapters[i].style.counterReset = "chapter " + display_num + " sect1 example_counter theorem algorithm figure";
-              MathJax.Hub.Queue(["Typeset",MathJax.Hub,chapters[i]]);
-              var nav = "\n<table style=\"width:100%;\"><tr style=\"width:100%\">";
-              nav += "<td style=\"width:33%;text-align:left;\">";
-              if (i>0) {
-                nav+="<a href=underactuated.html?chapter=" +
-                    chapterNumberToID(current_chapter-1) +
-                    ">Previous chapter</a>";
-              }
-              nav += "</td><td style=\"width:33%;text-align:center;\"><a href=underactuated.html>Table of contents</a></td><td style=\"width:33%;text-align:right;\">";
-              if ((i+1)<chapters.length) {
-                nav += "<a href=underactuated.html?chapter=" +
-                    chapterNumberToID(current_chapter+1) +
-                    ">Next chapter</a>";
-              }
-              nav += "</td></tr></table>\n";
-              chapters[i].innerHTML = nav + chapters[i].innerHTML + nav;
-            }
-          }
-          if (chapters[current_chapter-1].id === "drake") {
-            // then i'm in the drake appendix, so fill in that content
-
-            // read drake_version.json and set binaries info
-            var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = ( function (j) { return function() {
-              if (this.readyState == 4 && this.status == 200) {
-                  var data = JSON.parse(this.responseText);
-
-                  document.getElementById("drake-linux-binaries").innerHTML =
-                      data.base_url + data.build + "/drake-" + data.version +
-                      "-xenial.tar.gz";
-                  document.getElementById("drake-mac-binaries").innerHTML =
-                      data.base_url + data.build + "/drake-" + data.mac_version
-                      + "-mac.tar.gz";
-              }
-            } })(j);
-            xhttp.overrideMimeType('text/plain');
-            xhttp.open('GET', 'drake_version.json', true);
-            xhttp.send();
-
-            document.getElementById("list_of_drake_examples").innerHTML =
-                "<ul>" + list_of_drake_examples + "</ul>";
-
-          }
-          if (chapters[current_chapter-1].id === "bib") {
-            // TODO(russt): Embed the bibliography in the page (and make sure the reference numbers match up).
-            bibtags = "";
-            function addbib(value, key) {
-              bibtags += key + "+";
-            }
-            bib.forEach(addbib);
-            bibtags = bibtags.slice(0, -1);
-
-            document.getElementById("bibliography").innerHTML =
-                    "<p>I'm working on a satisfying solution for this.  For now, <a href=http://groups.csail.mit.edu/locomotion/elib.cgi?b=" +
-                    bibtags + ">click here</a>.</p>";
-          }
-        }
-
-        var drakeTags = document.getElementsByTagName('drake');
-        for (j = 0; j < drakeTags.length; j++) {
-            drakeTags[j].innerHTML =
-                '<a style="font-variant:small-caps; text-decoration:none;" href="http://drake.mit.edu">Drake</a>';
-        }
-      }
-      </script>
+    <script type="text/javascript" src="htmlbook/book.js"></script>
 
     <script type="text/x-mathjax-config">
       MathJax.Hub.Config({
@@ -326,15 +23,14 @@
       });
     </script>
     <script type="text/javascript"
-      src="MathJax/MathJax.js?config=TeX-AMS_HTML">
+      src="htmlbook/MathJax/MathJax.js?config=TeX-AMS_HTML">
     </script>
 
     <link rel="stylesheet" href="highlight/styles/default.css">
     <script src="highlight/highlight.pack.js"></script> <!-- http://highlightjs.readthedocs.io/en/latest/css-classes-reference.html#language-names-and-aliases -->
     <script>hljs.initHighlightingOnLoad();</script>
 
-    <link rel="stylesheet" type="text/css" href="underactuated.css">
-
+    <link rel="stylesheet" type="text/css" href="htmlbook/book.css">
   </head>
 
 
@@ -380,13 +76,14 @@
   \newcommand{\btau}{{\bf \tau}}
   \newcommand{\bphi}{{\bf \phi}}
   \newcommand{\bPhi}{{\bf \Phi}}
+  \newcommand{\bpi}{{\bf \pi}}
   \newcommand{\bpsi}{{\bf \psi}}
   \newcommand{\bPsi}{{\bf \Psi}}
   \newcommand{\avg}[1]{E\left[ #1 \right]}
   \newcommand{\subjto}{\textrm{subject to}}
   \newcommand{\minimize}{\operatorname{\textrm{minimize}}}
   \newcommand{\maximize}{\operatorname{\textrm{maximize}}}
-  \newcommand{\find}{\operatorname{\textrm{find}}}
+  \DeclareMathOperator*{\find}{find}
   \newcommand{\argmax}{\operatorname{\textrm{argmax}}}
   \newcommand{\argmin}{\operatorname{\textrm{argmin}}}
   \newcommand{\sgn}{\operatorname{\textrm{sgn}}}
@@ -851,13 +548,13 @@ are available on YouTube</a>.</p>
     systems beyond the second-order control affine systems.</p>
 
     <div data-type="definition"> <h1>Underactuated Control Differential
-    Equations</h1> An $n$th-order control differential equation control
-    described by the equations \begin{equation} \frac{d^n\bq}{dt^n} = f(\bq,
-    ..., \frac{d^{n-1} \bq}{dt^{n-1}}, t, {\bf u}) \end{equation} is fully
-    actuated in state ${\bf x} = (\bq, ..., \frac{d^{n-1} \bq}{dt^{n-1}})$ and
-    time $t$ if the resulting map ${\bf f}$ is surjective: for every
-    $\frac{d^n\bq}{dt^n} $ there exists a ${\bf u}$ which produces the desired
-    response.  Otherwise it is underactuated. </div>
+    Equations</h1> An $n$th-order control differential equation (with $n\ge2$)
+    described by the equations \begin{equation} \frac{d^n\bq}{dt^n} = f(\bq, ..,
+    \frac{d^{n-1} \bq}{dt^{n-1}}, t, {\bf u}) \end{equation} is fully actuated
+    in state ${\bf x} = (\bq, ..., \frac{d^{n-1} \bq}{dt^{n-1}})$ and time $t$
+    if the resulting map ${\bf f}$ is surjective: for every $\frac{d^n\bq}{dt^n}
+    $ there exists a ${\bf u}$ which produces the desired response.  Otherwise
+    it is underactuated. </div>
 
     <p>It is easy to see that equation \ref{eq:underactuated_def} is a
     sufficient condition for underactuation.  This definition can also be
@@ -1797,11 +1494,11 @@ complete trajectory.</p>
       it.  The equations of motion are almost trivial, since it is only a
       single rigid body, and certainly fit into our standard manipulator
       equations:
-        \begin{gather*}
-        m \ddot{x} = -(u_1 + u_2)\sin\theta, \\
-        m \ddot{y} = (u_1 + u_2)\cos\theta - mg, \\
-        I \ddot\theta = R (u_1 - u_2)
-        \end{gather*}
+        \begin{gather}
+        m \ddot{x} = -(u_1 + u_2)\sin\theta, \label{eq:quad_x}\\
+        m \ddot{y} = (u_1 + u_2)\cos\theta - mg, \label{eq:quad_y}\\
+        I \ddot\theta = r (u_1 - u_2) \label{eq:quad_theta}
+        \end{gather}
       </p>
 
       <figure> <img width="50%" data-src="figures/quadrotor2d.svg"/>
@@ -2574,7 +2271,141 @@ complete trajectory.</p>
 
   <section data-type="sect1"><h1>Differential Flatness</h1>
 
-    <p>Coming soon... (presented in 2019 lecture 07).</p>
+    <p>Although the "swing up and balance" task is quite interesting for the
+    acrobot and cart-pole systems, quadrotors tend to inspire a slightly
+    different question.  First of all, stabilizing a hovering fixed point is
+    relatively easy on a quadrotor -- even our LQR controller will have an
+    extremely large region of attraction.  But people also tend to want to do
+    more with their quadrotors than just have them hover in place.  The task
+    we'll consider here is trajectory planning: how can you find a feasible
+    trajectory through state space for the quadrotor, even if there are
+    obstacles to avoid that are only known at runtime? </p>
+
+    <p>Trajectory design, and especially trajectory optimization, is a big idea
+    that we will <a href="underactuated.html?chapter=trajopt">explore more
+    thoroughly later in the text.</a>  But there is one idea that I would like
+    to present here, because in addition to being a very satisfying solution
+    for quadrotors, it is philosophically quite close to the idea of partial
+    feedback linearization.  That idea is called differential flatness.</p>
+
+    <p>One of the most important lessons from partial feedback linearization,
+    is the idea that if you have $m$ actuators, then you basically get to
+    control exactly $m$ quantities of your system.  With the "task space"
+    partial feedback linearization, we showed that these can be chosen in a
+    fairly general way.  Of course there are some requirements -- captured
+    above by the rank condition which checks for "inertial coupling".
+    Differential flatness exploits this same idea (choosing $m$ outputs), but
+    in the opposite direction.  The idea is that, for some systems, if you give
+    me a trajectory in those $m$ coordinates, it may in fact dictate what all
+    of the states/actuators must have been doing.  The fact that you can only
+    execute a subset of possible trajectories can, in this case, make
+    trajectory planning much easier!</p>
+
+    <p>Let's start with an example...</p>
+
+    <div data-type="example" class="drake"><h1>Differential flatness for
+      the Planar Quadrotor</h1>
+
+      <p>The planar quadrotor model described above has 3 degrees of freedom
+      ($x,y,\theta$) but only two actuators (one for each propellor).  My claim
+      is that, if you give me a trajectory for just the location of the center
+      of mass: $x(t), y(t), \forall t \in [t_0, t_f],$ then I will be able to
+      infer what $\theta(t)$ must be over that same interval in order to be
+      feasible.  Furthermore, I can even infer $\bu(t)$. There is one technical
+      condition required: the trajectory you give me for $x(t)$ and $y(t)$
+      needs to be continuously differentiable (four times).</p>
+
+      <p>To see this, first observe that from ($\ref{eq:quad_x}$) and
+      ($\ref{eq:quad_y}$) we have $$\frac{-m \ddot{x}}{ m \ddot{y} + mg} =
+      \frac{(u_1 + u_2)\sin\theta}{(u_1+u_2)\cos\theta} = \tan\theta.$$ In
+      words, given $\ddot{x}(t)$ and $\ddot{y}(t)$, I can solve for
+      $\theta$(t).  I can differentiate this relationship (in time) twice more
+      to obtain $\ddot\theta$.  Using ($\ref{eq:quad_theta}$) with
+      ($\ref{eq:quad_x}$) or ($\ref{eq:quad_y}$) give us two linear equations
+      for $u_1$ and $u_2$ which are easily solved.</p>
+
+      <p>Now you can see why we need the original trajectories to be smooth --
+      the solution to $\bu(t)$ depends on $\ddot\theta(t)$ which depends on
+      $\frac{d^4 x(t)}{dt^4}$ and $\frac{d^4 y(t)}{dt^4}$; we need those
+      derivatives to exist along the entire trajectory.</p>
+
+      <p>What's more -- if we ignore input limits for a moment -- <i>any</i>
+      sufficiently smooth trajectory of $x(t), y(t)$ is feasible, so if I can
+      simply find one that avoids the obstacles, then I have designed my state
+      trajectory.  As we will see, optimizing even high-degree
+      piecewise-polynomials is actually an easy problem (it works out to be a
+      quadratic program), assuming the constraints are convex.  In practice,
+      this means that once you have determined whether to go left or right
+      around the obstacles, trajectory design is easy and fast.</p>
+
+      <p>I've coded up a simple example of that for you here:</p>
+
+      <pysrc>quadrotor2d/differential_flatness.py</pysrc>
+
+      <figure> <img width="100%" data-src="figures/differential_flatness.svg"/>
+      <figcaption>Differential flatness for the planar quadrotor -- by solving
+      a simple optimization to find a smooth trajectory for $x(t)$ and $y(t)$,
+      I can back out $\theta(t)$ and even $\bu(t)$. </figcaption> </figure>
+
+    </div>
+
+    <p>The example above demonstrates that the planar quadrotor system is
+    differentially flat in the outputs $x(t)$, $y(t)$.  More generally, if we
+    have a dynamical system $$\dot{\bx} = f(\bx, \bu),$$ and we design some
+    output coordinates (essentially "task-space"): $$\bz(t) = h\left(\bx, \bu,
+    \frac{d\bu}{dt}, ..., \frac{d^k\bu}{dt^k}\right),$$ such that
+    \begin{gather*} \bx (t) = \bx\left(\bz, \frac{d\bz}{dt}, ...,
+    \frac{d^k\bz}{dt^k}\right), \\ \bu (t) = \bu\left(\bz, \frac{d\bz}{dt}, ..,
+    \frac{d^k\bz}{dt^k}\right),\end{gather*} then we say that the system $f$ is
+    differentially flat in the outputs $\bz$ <elib>Murray95</elib>.  Notice
+    that, in the general form, the flat outputs can also depend on the input
+    and it's time derivatives, but in our first example, they were a simple
+    function of the positions only.  And the requirement for showing that a
+    system is differentially flat in those outputs is to write the function
+    which solves for $\bx(t)$ and $\bu(t)$ as a function of only $\bz(t)$ and
+    its time derivatives.</p>
+
+    <p>I'm not aware of any numerical recipes for showing that a system is
+    differentially flat nor for finding potential flat outputs, but I admit I
+    haven't worked on it nor looked for those recipes.  That would be
+    interesting!  I think of differential flatness as a property that one must
+    find for your system -- typically via a little mechanical intuition and a
+    lot of algebra.  Once found, it can be very useful.</p>
+
+    <div data-type="example"><h1>Differential flatness for
+      the 3D Quadrotor</h1>
+
+      <p>Probably the most famous example of differential flatness is on
+        the full 3D quadrotors. <elib>Mellinger11</elib> showed that the 3D
+        quadrotor is differentially flat in the outputs
+        $\{x,y,z,\theta_{yaw}\}$.  And they used this, to dramatic effect,
+        to perform all sorts of acrobatics.  The resulting videos are
+        awesome (and probably deserve a lot of credit for the widespread
+        popularity of quadrotors in academia and industry over the next few
+        years).
+      </p>
+
+      <figure>
+        <iframe width="560" height="315"
+                src="https://www.youtube.com/embed/MvRTALJp8DM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe width="560" height="315"
+                src="https://www.youtube.com/embed/geqip_0Vjec" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <figcaption>Aggressive quadrotor trajectories using differential
+          flatness from <elib>Mellinger11</elib>.</figcaption>
+      </figure>
+
+      <p>A few things to note about these examples, just so we also understand
+      the limitations.  First, the technique above is great for designing
+      trajectories, but additional work is required to stabilizing those
+      trajectories (we'll cover that topic in more detail later in the notes).
+      Trajectory stabilization benefits greatly from good state estimation, and
+      the examples above were all performed in a motion capture arena. Also,
+      the "simple" version of the trajectory design that is fast enough to be
+      used for flying through moving hoops is restricted to convex optimization
+      formulations -- which means one has to hard-code apriori the decisions
+      about whether to go left or right / up or down around each obstacle.</p>
+
+    </div>
 
   </section>
 
@@ -3404,6 +3235,10 @@ Driving</h1>
 <section data-type="chapter" class="chapter" id="stochastic"><h1>Model Systems
 with Stochasticity</h1>
 
+  <!-- TODO: Adopt more of the 6.437 notation; it's excellent and compatible:
+  https://stellar.mit.edu/S/course/6/sp19/6.437/courseMaterial/topics/topic5/readings/Preliminaries/Preliminaries.pdf
+   -->
+
   <p>My goals for this chapter are to build intuition for the beautiful and rich
   behavior of nonlinear dynamical system that are subjected to random
   (noise/disturbance) inputs.  So far we have focused primarily on systems
@@ -3914,18 +3749,18 @@ with Stochasticity</h1>
 
       <p> As we begin to develop theoretical and algorithmic tools for optimal
       control, we will see that some formulations are much easier to deal with
-      than others. One important example is the dramatic simplification that can
-      come from formulating objective functions using <em>additive cost</em>,
-      because they often yield recursive solutions.  In the additive cost
-      formulation, the long-term "score" for a trajectory can be written as
-      $$\int_0^T g(x(t),u(t)) dt,$$ where $g()$ is the instantaneous cost, and
-      $T$ can be either a finite real number or $\infty$.  We will call a
-      problem specification with a finite $T$ a "finite-horizon" problem, and
-      $T=\infty$ an "infinite-horizon" problem.  Problems and solutions for
-      infinite-horizon problems tend to be more elegant, but care is required to
-      make sure that the integral converges for the optimal controller
-      (typically by having an achievable goal that allows the robot to accrue
-      zero-cost).</p>
+      than others. One important example is the dramatic simplification that
+      can come from formulating objective functions using <em>additive
+      cost</em>, because they often yield recursive solutions.  In the additive
+      cost formulation, the long-term "score" for a trajectory can be written
+      as $$\int_0^T g(x(t),u(t)) dt,$$ where $g()$ is the instantaneous cost
+      (also referred to as the "running cost"), and $T$ can be either a finite
+      real number or $\infty$.  We will call a problem specification with a
+      finite $T$ a "finite-horizon" problem, and $T=\infty$ an
+      "infinite-horizon" problem.  Problems and solutions for infinite-horizon
+      problems tend to be more elegant, but care is required to make sure that
+      the integral converges for the optimal controller (typically by having an
+      achievable goal that allows the robot to accrue zero-cost).</p>
 
       <p> The quadratic cost function suggested in the double integrator example
       above is clearly written as an additive cost.  At first glance, our
@@ -3968,23 +3803,23 @@ with Stochasticity</h1>
     <p>There are many algorithms for finding (or approximating) the optimal
     path from a start to a goal on directed graphs.  In dynamic programming,
     the key insight is that we can find the shortest path from every node by
-    solving recursively for the optimal <em>cost-to-go</em> from every node to
-    the goal. One such algorithm starts by initializing an estimate
-    $\hat{J}^*=0$ for all $s_i$, then proceeds with an iterative algorithm
-    which sets \begin{equation} \hat{J}^*(s_i) \Leftarrow \min_{a \in A} \left[
-    g(s_i,a) + \hat{J}^*\left({f(s_i,a)}\right) \right].
-    \label{eq:value_update} \end{equation} In software, $\hat{J}^*$ can be
-    represented as a vector with dimension equal to the number of discrete
-    states.  This algorithm, appropriately known as <em>value iteration</em>,
-    is guaranteed to converge to the optimal cost-to-go up to a constant
-    factor, $\hat{J}^* \rightarrow J^* + c$ <elib>Bertsekas96</elib>, and in
-    practice does so rapidly. Typically the update is done in <em>batch</em> --
-    e.g. the estimate is updated for all $i$ at once -- but the
-    <em>asynchronous</em> version where states are updated one at a time is
-    also known to converge, so long as every state is eventually updated
-    infinitely often.  Assuming the graph has a goal state with a zero-cost
-    self-transition, then this cost-to-go function represents the weighted
-    shortest distance to the goal. </p>
+    solving recursively for the optimal <em>cost-to-go</em> (the cost that will
+    be accumulated when running the optimal controller) from every node to the
+    goal. One such algorithm starts by initializing an estimate $\hat{J}^*=0$
+    for all $s_i$, then proceeds with an iterative algorithm which sets
+    \begin{equation} \hat{J}^*(s_i) \Leftarrow \min_{a \in A} \left[ g(s_i,a) +
+    \hat{J}^*\left({f(s_i,a)}\right) \right]. \label{eq:value_update}
+    \end{equation} In software, $\hat{J}^*$ can be represented as a vector with
+    dimension equal to the number of discrete states.  This algorithm,
+    appropriately known as <em>value iteration</em>, is guaranteed to converge
+    to the optimal cost-to-go up to a constant factor, $\hat{J}^* \rightarrow
+    J^* + c$ <elib>Bertsekas96</elib>, and in practice does so rapidly.
+    Typically the update is done in <em>batch</em> -- e.g. the estimate is
+    updated for all $i$ at once -- but the <em>asynchronous</em> version where
+    states are updated one at a time is also known to converge, so long as
+    every state is eventually updated infinitely often.  Assuming the graph has
+    a goal state with a zero-cost self-transition, then this cost-to-go
+    function represents the weighted shortest distance to the goal. </p>
 
     <p> Value iteration is an amazingly simple algorithm, but it accomplishes
     something quite amazing: it efficiently computes the long-term cost of an
@@ -4129,9 +3964,9 @@ with Stochasticity</h1>
         without input limits) to the origin   using a quadratic cost: $$
         g(\bx,\bu) = q^2 + \dot{q}^2 + u^2. $$  I claim   (without derivation)
         that the optimal controller for this objective is $$\pi(\bx) = -q -
-        \sqrt{3}\dot{q}.$$   To convince you that this is indeed optimal, I have
-        produced   the following cost-to-go function: $$J(\bx) = \sqrt{3} q^2 +
-        2 q \dot{q} + \sqrt{3} \dot{q}^2.$$</p>
+        \sqrt{3}\dot{q}.$$   To convince you that this is indeed optimal, I
+        have produced the following cost-to-go function: $$J(\bx) = \sqrt{3}
+        q^2 + 2 q \dot{q} + \sqrt{3} \dot{q}^2.$$</p>
 
         <p>Taking \begin{gather*} \pd{J}{q} = 2\sqrt{3} q + 2\dot{q}, \qquad
         \pd{J}{\dot{q}} = 2q + 2\sqrt{3}\dot{q}, \end{gather*}   we can write
@@ -4966,11 +4801,11 @@ with Stochasticity</h1>
       <div data-type="theorem"><h1>LaSalle's Theorem</h1>
 
         <p>Given a system $\dot{\bx} = f(\bx)$ with $f$ continuous. If we can
-        produce a scalar function $V(\bx)$ with continuous derivatives for which
-        over an open-subset ${\cal B}\in \mathbf{R}^n$ we have $$V(\bx) \succ
-        0,\quad \dot{V}(\bx) \preceq 0,$$ and $V(\bx)\rightarrow \infty$ as
-        $||\bx||\rightarrow \infty$, then $\bx$ will converge to the largest
-        <i>invariant set</i> where $\dot{V}(\bx) = 0$.</p>
+        produce a scalar function $V(\bx)$ with continuous derivatives for
+        which we have $$V(\bx) \succ 0,\quad \dot{V}(\bx) \preceq 0,$$ and
+        $V(\bx)\rightarrow \infty$ as $||\bx||\rightarrow \infty$, then $\bx$
+        will converge to the largest <i>invariant set</i> where $\dot{V}(\bx) =
+        0$.</p>
 
       </div>
 
@@ -4980,7 +4815,8 @@ with Stochasticity</h1>
       leave.  The "largest invariant set" need not be connected; in fact for the
       pendulum example each fixed point is an invariant set, so the largest
       invariant set is the <em>union</em> of all the fixed points of the
-      system.</p>
+      system.  There are also variants of LaSalle's Theorem which work over
+      a region.</p>
 
       <p>Finding a Lyapunov function which $\dot{V} \prec 0$ is more difficult
       than finding one that has $\dot{V} \preceq 0$.  LaSalle's theorem gives us
@@ -5191,23 +5027,62 @@ with Stochasticity</h1>
       our purposes this gap is very small; we should remember that it exists but
       not worry about it too much for now.</p>
 
-      <p>Even better, there is quite a bit that is known about how to choose the
-      terms in ${\bf m}(\bx)$.  For example, if you give me the polynomial \[
-      p(x) = 2 - 4x + 5x^2 \] and ask if it is positive for all real $x$, I can
-      convince you that it is by producing the sums-of-squares factorization \[
-      p(x) = 1 + (1-2x)^2 + x^2, \] and I know that I can formulate the problem
-      without needing any monomials of degree greater than 1 (the square-root of
-      the degree of $p$) in my monomial vector.  In practice, what this means
-      for us is that people have authored optimization front-ends which take a
-      high-level specification with constraints on the positivity of polynomials
-      and they automatically generate the SDP problem for you, without having to
-      think about what terms should appear in ${\bf m}(\bx)$ (c.f.
-      <elib>Prajna04</elib>). This class of optimization problems is called
-      Sums-of-Squares (SOS) optimization.</p>
+      <p>Even better, there is quite a bit that is known about how to choose
+      the terms in ${\bf m}(\bx)$.  For example, if you give me the polynomial
+      \[ p(x) = 2 - 4x + 5x^2 \] and ask if it is positive for all real $x$, I
+      can convince you that it is by producing the sums-of-squares
+      factorization \[ p(x) = 1 + (1-2x)^2 + x^2, \] and I know that I can
+      formulate the problem without needing any monomials of degree greater
+      than 1 (the square-root of the degree of $p$) in my monomial vector.  In
+      practice, what this means for us is that people have authored
+      optimization front-ends which take a high-level specification with
+      constraints on the positivity of polynomials and they automatically
+      generate the SDP problem for you, without having to think about what
+      terms should appear in ${\bf m}(\bx)$ (c.f. <elib>Prajna04</elib>).
+      This class of optimization problems is called Sums-of-Squares (SOS)
+      optimization.</p>
+
+      <p>As it happens, the particular choice of ${\bf m}(\bx)$ can have a huge
+      impact on the numerics of the resulting semidefinite program (and on your
+      ability to solve it with commercial solvers). <drake></drake> implements
+      some particularly novel/advanced algorithms to make this work well
+      <elib>Permenter17</elib>.</p>
 
       <p>We will write optimizations using sums-of-squares constraints as \[
       p(\bx) \sos \] as shorthand for the constraint that $p(\bx) \ge 0$ for all
       $\bx$, as demonstrated by finding a sums-of-squares decomposition.</p>
+
+      <p>This is surprisingly powerful.  It allows us to use convex
+      optimization to solve what appear to be very non-convex optimization
+      problems.</p>
+
+      <div data-type="example" class="drake"><h1>Global minimization via
+        SOS</h1>
+
+        <p>Consider the following famous non-linear function of two variables
+        (called the "six-hump-camel": $$p(x) = 4x^2 + xy - 4y^2 - 2.1x^4 + 4y^4
+        + \frac{1}{3}x^6.$$  This function has six local minima, two of them
+        being global minima <elib>Henrion09a</elib>.</p>
+
+        <div  style="text-align:center"><img
+                data-src="figures/six_hump_camel.svg" width="90%"/></div>
+
+        <p>By formulating a simple sums-of-squares optimization, we can
+        actually find the minimum value of this function (technically, it is
+        only a lower bound, but in this case and many cases, it is surprisingly
+        tight) by writing: \begin{align*} \max_\lambda \ \ & \lambda \\
+        \text{s.t. } & p(x) - \lambda \text{ is sos.} \end{align*}  Go ahead
+        and play with the code (most of the lines are only for plotting; the
+        actual optimization problem is nice and simple to formulate). </p>
+
+        <pysrc>simple/six_hump_camel.py</pysrc>
+
+        <p>Note that this finds the minimum value, but does not actually
+        produce the $\bx$ value which mimimizes it.  This is possible
+        <elib>Henrion09a</elib>, but it requires examining the dual of the
+        sums-of-squares solutions (which we don't need for the goals of this
+        chapter).</p>
+      </div>
 
     </section>
 
@@ -5226,60 +5101,40 @@ with Stochasticity</h1>
       \sos. \end{align*}  Because this is a convex optimization, the solver will
       return a solution if one exists.</p>
 
-      <div data-type="example" class="drake"><h1>Global stability of the simple
-      pendulum via SOS</h1>
+      <div data-type="example" class="drake"><h1>Verifying a Lyapunov candidate
+        via SOS</h1>
 
-        <p> We opened this chapter using our intuition about energy to discuss
-        stability on the simple pendulum. Now we'll replace that intuition with
-        convex optimization (because it will also work for more difficult
-        systems where our intuition fails).</p>
+        <p>This example is example 7.2 from <elib>Parrilo00</elib>. Consider
+        the nonlinear system: \begin{align*} \dot{x}_0 =& -x_0 - 2x_1^2 \\
+        \dot{x}_1 =& -x_1 - x_0 x_1 - 2x_1^3,\end{align*} and the <i>fixed
+        </i> Lyapunov function $V(x) = x_0^2 + 2x_1^2$, test if $\dot{V}(x)$ is
+        negative definite.</p>
 
-        <p>But wait!  The equations of motion of the simple pendulum are not
-        polynomial, are they (they have a $\sin(\theta)$ in them)?  Actually
-        nearly all rigid-body systems can be written as polynomials given a
-        change of coordinates.  Indeed, the rigid-body-assumption is simply an
-        assumption that points on the same body stay a constant distance apart,
-        and Euclidean distance is certainly a polynomial.  For a more thorough
-        discussion see, for instance, <elib>Wampler11</elib> and
-        <elib>Sommese05</elib>.</p>
+        <p>The numerical solution can be written in a few lines of code, and
+        is a convex optimization.</p>
 
-        <p>For the purposes of this example, let's change coordinates from
-        $[\theta,\dot\theta]^T$ to $\bx = [s,c,\dot\theta]^t$, where $s \equiv
-        \sin\theta$ and $c \equiv \cos\theta$.  Then we can write the pendulum
-        dynamics as $$\dot\bx = \begin{bmatrix} c \dot\theta \\ -s \dot\theta \\
-        -\frac{1}{m l^2} \left( b \dot\theta + mgls \right) \end{bmatrix}.$$
-        </p>
+        <pysrc>lyapunov/verify_global_polynomial.py</pysrc>
 
-        <p>Now let's parameterize a Lyapunov candidate $V(s,c,\dot\theta)$ as
-        the polynomial with unknown coefficients which contains all monomials up
-        to degree 2:  $$V = \alpha_0 + \alpha_1 s + \alpha_2 c + ... \alpha_{9}
-        s^2 + \alpha_{10} sc + \alpha_{11} s\dot\theta.$$ Now we'll formulate
-        the feasibility problem: \[ \find_{\bf \alpha} \quad  \subjto \quad V
-        \sos, \quad -\dot{V} \sos.\] In fact, this is asking too much -- really
-        $\dot{V}$ only needs to be negative when $s^2+c^2=1$.  We can accomplish
-        this with the so-called <i>S-procedure</i>, which we will discuss more
-        below, and instead write \[ \find_{{\bf \alpha},\lambda} \quad  \subjto
-        \quad V \sos, \quad -\dot{V} -\lambda(\bx)(s^2+c^2-1) \sos.\] (Here
-        $\lambda(\bx)$ is another polynomial with free coefficients which the
-        optimization can use to make terms arbitrarily more positive when
-        $s^2+c^2 \neq 1$.) Finally, for style points, in the code example in
-        <drake></drake> we ask for exponential stability:</p>
+      </div>
 
-        <todo>Add python example</todo>
-        <p><b>Python version coming soon (try src/lypunov/cubic_polyonomial.py
-        if your eager).</b></p>
+      <div data-type="example" class="drake"><h1>Searching for a Lyapunov
+        function via SOS</h1>
 
-        <p>As always, make sure that you open up the code and take a look.  The
-        result is a Lyapunov function that looks familiar (visualized as a
-        countour plot here):</p>
+        <p>Verifying a candidate Lyapunov function is all well and good, but
+        the real excitement starts when we use optimization to <i>find</i> the
+        Lyapunov function.  In the following code, we parameterize $V(x)$ as
+        the polynomial containing all monomials up to degree 2, with the
+        coefficients as decision variables: $$V(x) = c_0 + c_1x_0 + c_2x_1 +
+        c_3x_0^2 + c_4 x_0x_1 + c_5 x_1^2.$$  We will set the scaling
+        (arbitrarily) to avoid numerical issues by setting $V(0)=0$, $V([1,0])
+        = 1$.  Then we write: \begin{align*} \find_{\bc} \ \ \subjto \ \ &
+        V\text{ is sos, } \\ & -\dot{V} \text{ is sos.}\end{align*}</p>
 
-        <div  style="text-align:center"><img data-src="figures/global_pend_V.svg" width="400px"/></div>
+        <pysrc>lyapunov/search_global_polynomial.py</pysrc>
 
-        <p>Aha!  Not only does the optimization finds us coefficients for the
-        Lyapunov function which satisfy our Lyapunov conditions, but the result
-        looks a lot like mechanical energy.  In fact, the result is a little
-        better than energy... there are some small extra terms added which prove
-        exponential stability without having to invoke LaSalle's Theorem.</p>
+        <p>Up to numerical convergence tolerance, it discovers the same
+        coefficients that we chose above (zeroing out the unnecessary
+        terms).</p>
 
       </div>
 
@@ -5288,10 +5143,11 @@ with Stochasticity</h1>
       every sub-level set of $V$ is an invariant set of $f$) instead of a
       necessary one.  First, there is no guarantee that a stable polynomial
       system can be verified using a polynomial Lyapunov function (of any
-      degree, and in fact there are known counter-examples <todo>add ref</todo>)
-      and here we are only searching over a fixed-degree polynomial.  Second,
-      even if a polynomial Lyapunov function does exist, there is a gap between
-      the SOS polynomials and the positive polynomials.</p>
+      degree, and in fact there are known counter-examples
+      <elib>Ahmadi11a</elib>) and here we are only searching over a fixed-degree
+      polynomial.  Second, even if a polynomial Lyapunov function does exist,
+      there is a gap between the SOS polynomials and the positive
+      polynomials.</p>
 
       <p>Despite these caveats, I have found this formulation to be surprisingly
       effective in practice.  Intuitively, I think that this is because there is
@@ -5478,7 +5334,7 @@ with Stochasticity</h1>
 
       <section data-type="sect3"><h1>The S-procedure</h1>
 
-        <p> Consider a scalar polynomial, $p(\bx)$, and a semi-algebraic set
+        <p>Consider a scalar polynomial, $p(\bx)$, and a semi-algebraic set
         $g(\bx) \preceq 0$, where $g$ is a vector of polynomials.  If I can find
         a polynomial "multiplier", $\lambda(\bx)$, such that \[ p(\bx) +
         \lambda^T(\bx) g(\bx) \sos, \quad \text{and} \quad \lambda(\bx) \sos, \]
@@ -5487,6 +5343,15 @@ with Stochasticity</h1>
         $g(\bx) \le 0$, it is only harder to be positive, but when $g(\bx) > 0$,
         it is possible for the combined function to be SOS even if $p(\bx)$ is
         negative.</p>
+
+        <p>We can also handle equality constraints with only a minor
+        modification -- we no longer require the multiplier to be positive. If
+        I can find a polynomial "multiplier", $\lambda(\bx)$, such that \[
+        p(\bx) + \lambda^T(\bx) g(\bx) \sos \] then this is sufficient to
+        demonstrate that $$p(\bx)\ge 0 \quad \forall \bx \in \{ g(\bx) = 0
+        \}.$$  Here the intuition is that $\lambda(x)$ can add arbitrary
+        positive terms to help me be SOS, but those terms contribute nothing
+        precisely when $g(x)=0$.</p>
 
       </section>
 
@@ -5588,6 +5453,62 @@ with Stochasticity</h1>
       can see that if the kinematics are polynomial, then the dynamics will be,
       too.</p>
 
+      <div data-type="example" class="drake"><h1>Global stability of the simple
+        pendulum via SOS</h1>
+
+        <p> We opened this chapter using our intuition about energy to discuss
+          stability on the simple pendulum. Now we'll replace that intuition with
+          convex optimization (because it will also work for more difficult
+          systems where our intuition fails).</p>
+
+        <p>But wait!  The equations of motion of the simple pendulum are not
+          polynomial, are they (they have a $\sin(\theta)$ in them)?  Actually
+          nearly all rigid-body systems can be written as polynomials given a
+          change of coordinates.  Indeed, the rigid-body-assumption is simply an
+          assumption that points on the same body stay a constant distance apart,
+          and Euclidean distance is certainly a polynomial.  For a more thorough
+          discussion see, for instance, <elib>Wampler11</elib> and
+          <elib>Sommese05</elib>.</p>
+
+        <p>For the purposes of this example, let's change coordinates from
+          $[\theta,\dot\theta]^T$ to $\bx = [s,c,\dot\theta]^t$, where $s \equiv
+          \sin\theta$ and $c \equiv \cos\theta$.  Then we can write the pendulum
+          dynamics as $$\dot\bx = \begin{bmatrix} c \dot\theta \\ -s \dot\theta \\
+          -\frac{1}{m l^2} \left( b \dot\theta + mgls \right) \end{bmatrix}.$$
+        </p>
+
+        <p>Now let's parameterize a Lyapunov candidate $V(s,c,\dot\theta)$ as
+        the polynomial with unknown coefficients which contains all monomials
+        up to degree 2:  $$V = \alpha_0 + \alpha_1 s + \alpha_2 c + ...
+        \alpha_{9} s^2 + \alpha_{10} sc + \alpha_{11} s\dot\theta.$$ Now we'll
+        formulate the feasibility problem: \[ \find_{\bf \alpha} \quad  \subjto
+        \quad V \sos, \quad -\dot{V} \sos.\] In fact, this is asking too much
+        -- really $\dot{V}$ only needs to be negative when $s^2+c^2=1$.  We can
+        accomplish this with the S-procedure, and instead write \[ \find_{{\bf
+        \alpha},\lambda} \quad  \subjto \quad V \sos, \quad -\dot{V}
+        -\lambda(\bx)(s^2+c^2-1) \sos.\] (Recall that $\lambda(\bx)$ is another
+        polynomial with free coefficients which the optimization can use to
+        make terms arbitrarily more positive when $s^2+c^2 \neq 1$.) Finally,
+        for style points, in the code example in <drake></drake> we ask for
+        exponential stability:</p>
+
+        <pysrc>pendulum/global_sums_of_squares.py</pysrc>
+
+        <p>As always, make sure that you open up the code and take a look.  The
+          result is a Lyapunov function that looks familiar (visualized as a
+          contour plot here):</p>
+
+        <div  style="text-align:center"><img
+            data-src="figures/pend_global_sos.svg" width="400px"/></div>
+
+        <p>Aha!  Not only does the optimization finds us coefficients for the
+          Lyapunov function which satisfy our Lyapunov conditions, but the result
+          looks a lot like mechanical energy.  In fact, the result is a little
+          better than energy... there are some small extra terms added which prove
+          exponential stability without having to invoke LaSalle's Theorem.</p>
+
+      </div>
+
       <p>In practice, you can also Taylor approximate any smooth nonlinear
       function using polynomials.  This can be an effective strategy in
       practice, because you can limit the degrees of the polynomial, and because
@@ -5626,32 +5547,27 @@ with Stochasticity</h1>
 
   <p>The big change that is going to allow us to scale to high-dimensional
   systems is that we are going to give up the goal of solving for the optimal
-  feedback controller for the entire state space, and instead attempt to find an
-  optimal control solution that is valid from only a single initial condition.
-  Instead of representing this as a feedback control function, we can represent
-  this solution as a <em>trajectory</em>, $\bx(\cdot), \bu(\cdot)$, typically
-  defined over a finite interval.  In our graph-search dynamic programming
-  algorithms, we discretized the dynamics of the system on a mesh spread across
-  the state space.  This does not scale to high-dimensional systems, and it was
-  difficult to bound the errors due to the discretization.  If we instead
-  restrict ourselves to optimizing only a single initial condition, then a
-  different discretization scheme emerges: we can discretize the state and input
-  trajectories <em>over time</em>.</p>
+  feedback controller for the entire state space, and instead attempt to find
+  an optimal control solution that is valid from only a single initial
+  condition. Instead of representing this as a feedback control function, we
+  can represent this solution as a <em>trajectory</em>, $\bx(t), \bu(t)$,
+  typically defined over a finite interval.</p>
 
   <section data-type="sect1"><h1>Problem Formulation</h1>
 
-    <p>Given an initial condition, $\bx_0$, and an input trajectory $u(t)$
+    <p>Given an initial condition, $\bx_0$, and an input trajectory $\bu(t)$
     defined over a finite interval, $t\in[t_0,t_f]$,   we can compute the
     long-term (finite-horizon) cost of executing that trajectory   using the
     standard additive-cost optimal control objective, \[ J_{\bu(\cdot)}(\bx_0) =
     \int_{t_0}^{t_f} g(\bx(t),\bu(t)) dt. \]  We will write the trajectory
-    optimization problem as \begin{align*} \minimize_{u(\cdot)} \quad &
+    optimization problem as \begin{align*} \min_{\bu(\cdot)} \quad &
     \int_{t_0}^{t_f} g(\bx(t),\bu(t)) dt \\ \subjto \quad & \forall t,
     \dot{\bx}(t) = f(\bx(t),\bu(t)), \\ & \bx(t_0) = \bx_0. \\ \end{align*} Some
     trajectory optimization problems may also include additional constraints,
-    such as collision avoidance ($\bx$ can not cause the robot to be inside an
-    obstacle) or input limits (e.g. $\bu_{min} \le \bu \le \bu_{max}$ ), which
-    can be defined for all time or some subset of the trajectory.</p>
+    such as collision avoidance (e.g., where the constraint is that the signed
+    distance between the robot's geometry and the obstacles stays positive) or
+    input limits (e.g. $\bu_{min} \le \bu \le \bu_{max}$ ), which can be defined
+    for all time or some subset of the trajectory.</p>
 
     <p> As written, the optimization above is an optimization over continuous
     trajectories.  In order to formulate this as a numerical optimization, we
@@ -5659,8 +5575,13 @@ with Stochasticity</h1>
     surprisingly, there are many different ways to write down this
     parameterization, with a variety of different properties in terms of speed,
     robustness, and accuracy of the results. We will outline just a few of the
-    most popular below.  I would recommend <elib>Betts98+Betts01</elib> for
-    additional details.</p>
+    most popular below; I would recommend <elib>Betts98+Betts01</elib> for
+    additional details.  In our graph-search dynamic programming algorithms, we
+    discretized the dynamics of the system on a mesh spread across the state
+    space; in addition to not scaling well, we also found it difficult to bound
+    the errors due to the discretization.  Now we are in the space of
+    discretizing/parameterizing over time; conveniently we know relatively much
+    more about the numerics of integration along a trajectory.</p>
 
   </section>
 
@@ -5684,7 +5605,7 @@ with Stochasticity</h1>
     solution.</p>
 
     <p>The generic formulation of a nonlinear optimization problem is     \[
-    \minimize_z c(z) \quad \subjto \quad \bphi(z) \le 0, \]     where $z$ is a
+    \min_z c(z) \quad \subjto \quad \bphi(z) \le 0, \]     where $z$ is a
     vector of <em>decision variables</em>, $c$ is a scalar <em>objective
     function</em> and $\phi$ is a vector     of <em>constraints</em>.  Note
     that, although we write $\phi \le 0$, this formulation     captures
@@ -6227,15 +6148,320 @@ with Stochasticity</h1>
 
   </section>
 
-  <section
-      data-type="sect1"><h1>Trajectory optimization as policy search.</h1>
+</section> <!-- ***************  end of trajectory optimization **************   -->
 
-    <p>Can also parameterize a feedback controller and search over those
-      parameters directly (instead of parameterizing the input tape).</p>
+<section data-type="chapter" class="chapter" id="search"><h1>Motion Planning as
+Search</h1>
+
+  <p>The term "motion planning" is a hopelessly general term which almost
+  certainly encompasses the dynamic programming, feedback design, and
+  trajectory optimization algorithms that we have already discussed.  However,
+  there are a number of algorithms and ideas that we have not yet discussed
+  which have grown from the idea of formulating motion planning as a search
+  problem -- for instance searching for a path from a start to a goal in a
+  graph which is too large solve completely with dynamic programming. Some, but
+  certainly not all, of these algorithms sacrifice optimality in order to find
+  any path if it exists, and the notion of a planner being "complete" --
+  guaranteed to find a path if one exists -- is highly valued.  This is
+  precisely our goal for this chapter, to add some additional tools that will
+  be able to provide some form of solutions for our most geometrically complex,
+  highly non-convex, robot control problems.</p>
+
+  <p><elib>LaValle06</elib> is a very nice book on planning algorithms in
+  general and on motion planning algorithms in particular.  Compared to other
+  planning problems, <em>motion planning</em> typically refers to problems
+  where the planning domain is continuous (e.g. continuous state space,
+  continuous action space), but many motion planning algorithms trace their
+  origins back to ideas in discrete domains (e.g., graph search).</p>
+
+  <p>For this chapter, we will consider the following problem formulation:
+  given a system defined by the nonlinear dynamics (in continuous- or
+  discrete-time) $$\dot{\bx} = f(\bx,\bu) \quad \text{or} \quad \bx[n+1] =
+  f(\bx[n],\bu[n]),$$ and given a start state $\bx(0) = \bx_0$ and a goal
+  region ${\cal G}$, find any finite-time trajectory from $\bx_0$ to to $\bx
+  \in {\cal G}$ if such a trajectory exists.</p>
+
+  <section data-type="sect1"><h1>Artificial Intelligence as Search</h1>
+
+    <p>A long history...  some people feel that the route to creating
+    intelligent machines is to collect large ontologies of knowledge, and then
+    perform very efficient search. (The more modern view of AI is focused
+    instead on machine learning, the right answer probably involves pieces of
+    both.)  Samuels checker players, Deep Blue playing chess, theorem proving,
+    Cyc, IBM Watson,...</p>
+
+    <p>One of the key ideas is the use of "heuristics" to guide the search.
+    "Is it possible to find and optimal path from the start to a goal without
+    visiting every node?".  $A^*$.  Admissible heuristics. Example: google
+    maps.</p>
+
+    <p>Online planning.  $D^*$, $D^*$-Lite.</p>
 
   </section>
 
-</section> <!-- ***************  end of trajectory optimization **************   -->
+  <section data-type="sect1"><h1>Randomized motion planning</h1>
+
+    <p>If you remember how we introduced dynamic programming initially as a
+    graph search, you'll remember that there were some challenges in
+    discretizing the state space.  Let's assume that we have discretized the
+    continuous space into some finite set of discrete nodes in our graph.  Even
+    if we are willing to discretize the action space for the robot (this might
+    be even be acceptable in practice), we had a problem where discrete actions
+    from one node in the graph, integrated over some finite interval $h$, are
+    extremely unlikely to land exactly on top of another node in the graph.  To
+    combat this, we had to start working on methods for interpolating the value
+    function estimate between nodes.</p>
+
+    <todo>add figure illustrating the interpolation here</todo>
+
+    <p>Interpolation can work well if you are trying to solve for the
+    cost-to-go function over the entire state space, but it's less compatible
+    with search methods which are trying to find just a single path through the
+    space.  If I start in node 1, and land between node 2 and node 3, then
+    which node to I continue to expand from?</p>
+
+    <p>One approach to avoiding this problem is to build a <em>search tree</em>
+    as the search executes, instead of relying on a predefined mesh
+    discretization.  This tree will contains nodes rooted in the continuous
+    space at exactly the points where system can reach.</p>
+
+    <p>Another other problem with any fixed mesh discretization of a continuous
+    space, or even a fixed discretization of the action space, is that unless
+    we have specific geometric / dynamic insights into our continuous system,
+    it very difficult to provide a <em>complete</em> planning algorithm.  Even
+    if we can show that no path to the goal exists on the tree/graph, how can
+    we be certain that there is no path for the continuous system?  Perhaps a
+    solution would have emerged if we had discretized the system differently,
+    or more finely?</p>
+
+    <p>One approach to addressing this second challenge is to toss out the
+    notion of fixed discretizations, and replace them with random sampling
+    (another approach would be to adaptively add resolution to the
+    discretization as the algorithm runs).  Random sampling, e.g. of the action
+    space, can yield algorithms that are <em>probabilistically complete</em>
+    for the continuous space -- if a solution to the problem exists, then a
+    probabilistically complete algorithm will find that solution with
+    probability 1 as the number of samples goes to infinity.</p>
+
+    <p>With these motivations in mind, we can build what is perhaps the
+    simplest probabilistically complete algorithm for finding a path from the a
+    starting state to some goal region with in a continuous state and action
+    space:</p>
+
+    <div data-type="example" class="drake"><h1>Planning with a Random Tree</h1>
+
+      <p>Let us denote the data structure which contains the tree as ${\cal T}$.  The algorithm is very simple:
+      <ul>
+        <li>Initialize the tree with the start state: ${\cal T} \leftarrow \bx_0$.</li>
+        <li>On each iteration:
+          <ul>
+            <li>Select a random node, $\bx_{rand}$, from the tree, ${\cal T}$</li>
+            <li>Select a random action, $\bu_{rand}$, from a distribution over feasible actions.</li>
+            <li>Compute the dynamics: $\bx_{new} = f(\bx_{rand},\bu_{rand})$</li>
+            <li>If $\bx_{new} \in {\cal G}$, then terminate. Solution found!</li>
+            <li>Otherwise add the new node to the tree, ${\cal T} \leftarrow \bx_{new}$.</li>
+          </ul>
+        </li>
+      </ul>
+      It can be shown that this algorithm is, in fact, probabilistically complete.  However,
+      without strong heuristics to guide the selection of the nodes scheduled for expansion,
+      it can be extremely inefficient.  For a simple example, consider the system $\bx[n] = \bu[n]$ with $\bx \in \Re^2$ and $\bu_i \in [-1,1]$.
+      We'll start at the origin and put the goal region as $\forall i, 15 \le x_i \le 20$.
+      Try it yourself:
+
+      <pre><code class="matlab" testfile="testRandomTree">
+T = struct('parent',zeros(1,1000),'node',zeros(2,1000));  % pre-allocate memory for the "tree"
+for i=2:size(T.parent,2)
+T.parent(i) = randi(i-1);
+x_rand = T.node(:,T.parent(i));
+u_rand = 2*rand(2,1)-1;
+x_new = x_rand+u_rand;
+if (15<=x_new(1) && x_new(1)<=20 && 15<=x_new(2) && x_new(2)<=20)
+  disp('Success!'); break;
+end
+T.node(:,i) = x_new;
+end
+clf;
+line([T.node(1,T.parent(2:end));T.node(1,2:end)],[T.node(2,T.parent(2:end));T.node(2,2:end)],'Color','k');
+patch([15,15,20,20],[15,20,20,15],'g')
+axis([-10,25,-10,25]);
+</code></pre>
+      Again, this algorithm <em>is</em> probabilistically complete.  But after expanding 1000 nodes, the tree is basically a mess of node points all right on top of
+      each other:
+      <figure>
+        <img width="70%" data-src="figures/random_tree.svg"/>
+      </figure>
+      <p>We're nowhere close to the goal yet, and it's not exactly a hard problem.
+      </p>
+
+    </div>
+
+    <p>
+      While the idea of generating a tree of feasible points has clear advantages, we have lost
+      the ability to cross off a node (and therefore a region of space) once it has been explored.
+      It seems that, to make randomized algorithms effective, we are going to at the very least need some
+      form of heuristic for encouraging the nodes to spread out and explore the space.
+    </p>
+
+    <section data-type="sect2"><h1>Rapidly-Exploring Random Trees (RRTs)</h1>
+
+      <figure>
+        <img width="70%" data-src="figures/rrt.svg"/>
+      </figure>
+
+      <figure>
+        <img width="90%" data-src="figures/rrt_basic.svg"/>
+        <figcaption>(<a href="figures/rrt_basic.swf">Click here to watch the animation</a>)</figcaption>
+      </figure>
+
+      <figure>
+        <img width="90%" data-src="figures/rrt_voronoi.svg"/>
+        <figcaption>(<a href="figures/rrt_voronoi.swf">Click here to watch the animation</a>)</figcaption>
+      </figure>
+
+
+    </section>
+
+    <section data-type="sect2"><h1>RRTs for robots with dynamics</h1>
+
+    </section>
+
+    <section data-type="sect2"><h1>Variations and extensions</h1>
+
+      <p>Multi-query planning with PRMs, ...
+      </p>
+
+      <p>RRT*, RRT-sharp, RRTx,...  </p>
+
+      <p>Complexity bounds and dispersion limits</p>
+
+    </section>
+
+    <section data-type="sect2"><h1>Discussion</h1>
+
+      <p>Not sure yet whether randomness is fundamental here, or whether is a temporary "crutch"
+        until we understand geometric and dynamic planning better.</p>
+
+    </section>
+  </section>
+
+  <section data-type="sect1"><h1>Decomposition methods</h1>
+
+    <p>Cell decomposition...</p>
+
+    <p>Mixed-integer planning.</p>
+
+    <p>Approximate decompositions for complex environments (e.g. IRIS)</p>
+
+  </section>
+</section>
+
+<!-- ***************  end of feasible motion planning **************   -->
+
+<section data-type="chapter" class="chapter"
+         id="feedback_motion_planning"><h1>Feedback Motion
+  Planning</h1>
+
+</section>
+
+<!-- ***************  end of feedback motion planning **************   -->
+
+<section data-type="chapter" class="chapter" id="policy_search"><h1>Policy
+  Search</h1>
+
+  <p>So far, most of our recommendations for control design have been
+  relatively "local" -- leveraging trajectory planning/optimization as a tool
+  and our ability to locally stabilize trajectories for even very complex
+  systems using linear optimal control.  This is in stark contrast to the
+  dynamic programming / value iteration methods that we started with, which
+  attempt to solve for a control policy for every possible state;
+  unfortunately, the dynamic programming methods as presented are restricted to
+  relatively low dimensional state spaces.  What is missing so far is
+  algorithms for synthesizing feedback controllers that scale to large state
+  spaces and produce controllers that are, hopefully, less "local" than
+  trajectory stabilization.</p>
+
+  <p>In this chapter, we will explore another very natural idea: let us
+  parameterize a controller with some decision variables, and then search over
+  those decision variables directly in order to achieve a task and/or optimize
+  a performance objective.  We'll refer to this broad class of methods as
+  "policy search" or, when optimization methods are used, "policy
+  optimization". </p>
+
+  <section data-type="sect1"><h1>Problem formulation</h1>
+
+    <p>Consider a static full-state feedback policy, $$\bu =
+    \bpi_\balpha(\bx),$$ where $\bpi$ is potentially a nonlinear function, and
+    $\balpha$ is the vector of parameters that describe the controller.  The
+    control might take time as an input, or might even have it's own internal
+    state, but let's start with this simple form.  </p>
+
+    <p>How should we write an objective function for optimizing $\balpha$?  The
+    approach that we used for trajectory optimization is quite reasonable --
+    the objective was typically to minimize an integral cost over some time
+    horizon (be it finite or infinite).  But in trajectory optimization, the
+    cost is only ever defined based on forward simulation from a single initial
+    condition.  We used the same additive cost structures in dynamic
+    programming, where the Hamilton-Bellman-Jacobi equation provided optimality
+    conditions for optimizing an additive cost from <i>every</i> initial
+    condition; at least in the idealized equations, we were able to get away
+    with saying $\forall \bx, \minimize_\bu ...$. </p>
+
+    <p>But now we are playing a different game.  If we are searching over the
+    some finitely parameterized policy, $\bpi_{\balpha}$, we can almost never
+    expect to be optimal for every state -- and we need to somehow define the
+    relevant importance of different states.  For finite-time, a distribution
+    over initial conditions.  For infinite horizon, what really matters is the
+    stationary distribution (which depends on the policy).  Let's start with
+    the distribution over initial conditions.</p>
+
+  </section>
+
+  <section data-type="sect1"><h1>Controller parameterizations</h1>
+
+    <p>Searching directly for $K$ with an LQR objective is known to be bad. The
+    objective is non-convex, and the set of stabilizing controllers is not a
+    convex set. (TODO: Give the 2D example)</p>
+
+  </section>
+
+  <section data-type="sect1"><h1>Trajectory-based policy search</h1>
+
+
+  </section>
+
+  <section data-type="sect1"><h1>Lyapunov-based approaches to policy
+    search.</h1>
+
+
+  </section>
+
+  <section data-type="sect1"><h1>Approximate Dynamic Programming</h1>
+
+  </section>
+
+  <!-- TODO:
+  Guided Policy Search, etc (see Robert V's review);
+  PILCO and PIPPS (arxiv from Doya).
+  -->
+
+</section>
+
+<!-- ***************  end of policy search **************   -->
+
+<section data-type="chapter" class="chapter" id="output_feedback"><h1>
+Output Feedback (aka Pixels-to-Torques)</h1>
+
+  <section data-type="sect1"><h1>Static Output Feedback for Linear
+  Systems</h1></section>
+
+  <section
+          data-type="sect1"><h1>Linear Quadratic Gaussian (LQG)</h1></section>
+
+
+</section>
+
+<!-- ***************  end of output feedback **************   -->
 
 <section data-type="chapter" class="chapter" id="limit_cycles"><h1>Algorithms
 for Limit Cycles</h1>
@@ -6466,233 +6692,51 @@ for Limit Cycles</h1>
 </section> <!-- end limit cycles -->
 
 <section data-type="chapter" class="chapter" id="contact"><h1>Planning and
-  Control
-  through Contact</h1>
+Control through Contact</h1>
 
-<section data-type="sect1"><h1>The hybrid system's approach</h1>
+  <section data-type="sect1"><h1>Modeling and Simulating Contact Dynamics</h1>
 
-  <p>Transverse stabilization is more natural than full LQR
+    <p>There are roughly two main approaches to modeling contact between two
+    rigid bodies.  The first is to allow some penetration, and compute the
+    contact forces with stiff springs/dampers that resist the penetration.  The
+    second is to explicitly compute the contact forces required to resist
+    penetration completely.  Frictional forces can be added to both of these
+    models, typically using a Coulomb model.</p>
 
-</section>
+    <p>An essential component for all of these models is a collision-detection
+    engine that can, by inspecting the pose of the rigid bodies, evaluate which
+    bodies are in or near collision, and return pairs of points on the rigid
+    bodies that represent points of near collision or the points of deepest
+    penetration.</p>
 
-<section data-type="sect1"><h1>The measure differential inclusions approach</h1>
-</section>
+    <todo>Insert diagram for closest points/deepest penetration between two
+    bodies.</todo>
 
-</section>
+    <section data-type="sect2"><h1>Compliant Contact</h1>
 
-<!-- ***************  end of hybrid systems **************   -->
+      <p>The "stiff springs" approach, which is also refered to as "compliant
+      contact" or "soft contact" is appealing due to the simplicity of
+      implementation.  Given the current pose of the bodies, a </p>
 
-<section data-type="chapter" class="chapter" id="search"><h1>Motion Planning as
-  Search</h1>
-
-<p>The term "motion planning" is a hopelessly general term which almost certainly
-  encompasses the dynamic programming, feedback design, and trajectory optimization
-  algorithms that we have already discussed.  However, there are a number of algorithms
-  and ideas that we have not yet discussed which have grown from the idea of formulating
-  motion planning as a search problem -- for instance searching for a path from a start
-  to a goal in a graph which is too large solve completely with dynamic programming.
-  Some, but certainly not all, of these algorithms sacrifice optimality in order to
-  find any path if it exists, and the notion of a planner being "complete" -- guaranteed to find
-  a path if one exists -- is highly valued.  This is precisely our goal for this chapter,
-  to add some additional tools that will be able to provide some form of solutions for our
-  most geometrically complex, highly non-convex, robot control problems.</p>
-
-<p><elib>LaValle06</elib> is a very nice book on planning algorithms in general and on
-  motion planning algorithms in particular.  Compared to other planning problems,
-  <em>motion planning</em> typically refers to problems where the planning domain is continuous
-  (e.g. continuous state space, continuous action space), but many motion planning
-algorithms trace their origins back to ideas in discrete domains (e.g., graph search).</p>
-
-<p>For this chapter, we will consider the following problem formulation: given a system
-defined by the nonlinear dynamics (in continuous- or discrete-time) $$\dot{\bx} = f(\bx,\bu) \quad \text{or} \quad \bx[n+1] = f(\bx[n],\bu[n]),$$ and given a start state
-$\bx(0) = \bx_0$ and a goal region ${\cal G}$, find any finite-time trajectory from $\bx_0$ to
-to $\bx \in {\cal G}$ if such a trajectory exists.</p>
+    </section>
 
 
-<section data-type="sect1"><h1>Artificial Intelligence as Search</h1>
+  </section>
 
-<p>A long history...  some people feel that the route to creating intelligent machines
-is to collect large ontologies of knowledge, and then perform very efficient search.
-(The more modern view of AI is focused instead on machine learning, the right answer
-probably involves pieces of both.)  Samuels checker players, Deep Blue playing chess, theorem
-proving, Cyc, IBM Watson,...</p>
+  <section data-type="sect1"><h1>The hybrid system's approach</h1>
 
-<p>One of the key ideas is the use of "heuristics" to guide the search.  "Is it possible to find
-  and optimal path from the start to a goal without visiting every node?".  $A^*$.  Admissible heuristics.
-Example: google maps.</p>
+    <p>Transverse stabilization is more natural than full LQR
 
-<p>Online planning.  $D^*$, $D^*$-Lite.</p>
+  </section>
+
+  <section data-type="sect1"><h1>The measure differential inclusions approach</h1>
+  </section>
 
 </section>
 
-<section data-type="sect1"><h1>Randomized motion planning</h1>
-
-<p>If you remember how we introduced dynamic programming initially as a graph search,
-you'll remember that there were some challenges in discretizing the state space.  Let's assume
-that we have discretized the continuous space into some finite set of discrete nodes
-in our graph.  Even if
-we are willing to discretize the action space for the robot (this might be even be acceptable
-in practice), we had a problem where discrete actions from one node in the graph, integrated
-over some finite interval $h$, are extremely unlikely to land exactly on top of another
-node in the graph.  To combat this, we had to start working on methods for interpolating the value
-function estimate between nodes.</p>
-
-<todo>add figure illustrating the interpolation here</todo>
-
-<p>Interpolation can work well if you are trying to solve for the cost-to-go function over the entire
-state space, but it's less compatible with search methods which are trying to find
-just a single path through the space.  If I start in node 1, and land between node 2 and node 3, then
-which node to I continue to expand from?</p>
-
-  <p>One approach to avoiding this problem is to build a <em>search tree</em> as the search executes, instead of relying on a
-  predefined mesh discretization.  This tree will contains nodes rooted in the continuous space at exactly
-the points where system can reach.</p>
-
-<p>Another other problem with any fixed mesh discretization of a continuous space, or even
-  a fixed discretization of the action space, is that
-unless we have specific geometric / dynamic insights into our continuous system, it very difficult
-to provide a <em>complete</em> planning algorithm.  Even if we can show that no path to the goal exists on
-the tree/graph, how can we be certain that there is no path for the continuous system?  Perhaps
-a solution would have emerged if we had discretized the system differently, or more finely?</p>
-
-<p>One approach to addressing this second challenge is to toss out the notion of fixed
-discretizations, and replace them with random sampling (another approach would be to adaptively
-add resolution to the discretization as the algorithm runs).  Random sampling, e.g. of the action
-space, can yield algorithms that are <em>probabilistically complete</em> for the continuous space --
-if a solution to the problem exists, then a probabilistically complete algorithm will
-find that solution with probability 1 as the number of samples goes to infinity.</p>
-
-<p>With these motivations in mind, we can build what is perhaps the simplest probabilistically
-complete algorithm for finding a path from the a starting state to some goal region with
-in a continuous state and action space:</p>
-
-<div data-type="example" class="drake"><h1>Planning with a Random Tree</h1>
-
-<p>Let us denote the data structure which contains the tree as ${\cal T}$.  The algorithm is very simple:
-  <ul>
-    <li>Initialize the tree with the start state: ${\cal T} \leftarrow \bx_0$.</li>
-    <li>On each iteration:
-      <ul>
-        <li>Select a random node, $\bx_{rand}$, from the tree, ${\cal T}$</li>
-        <li>Select a random action, $\bu_{rand}$, from a distribution over feasible actions.</li>
-        <li>Compute the dynamics: $\bx_{new} = f(\bx_{rand},\bu_{rand})$</li>
-        <li>If $\bx_{new} \in {\cal G}$, then terminate. Solution found!</li>
-        <li>Otherwise add the new node to the tree, ${\cal T} \leftarrow \bx_{new}$.</li>
-      </ul>
-    </li>
-  </ul>
-  It can be shown that this algorithm is, in fact, probabilistically complete.  However,
-  without strong heuristics to guide the selection of the nodes scheduled for expansion,
-  it can be extremely inefficient.  For a simple example, consider the system $\bx[n] = \bu[n]$ with $\bx \in \Re^2$ and $\bu_i \in [-1,1]$.
-  We'll start at the origin and put the goal region as $\forall i, 15 \le x_i \le 20$.
-  Try it yourself:
-
-  <pre><code class="matlab" testfile="testRandomTree">
-T = struct('parent',zeros(1,1000),'node',zeros(2,1000));  % pre-allocate memory for the "tree"
-for i=2:size(T.parent,2)
-  T.parent(i) = randi(i-1);
-  x_rand = T.node(:,T.parent(i));
-  u_rand = 2*rand(2,1)-1;
-  x_new = x_rand+u_rand;
-  if (15<=x_new(1) && x_new(1)<=20 && 15<=x_new(2) && x_new(2)<=20)
-    disp('Success!'); break;
-  end
-  T.node(:,i) = x_new;
-end
-clf;
-line([T.node(1,T.parent(2:end));T.node(1,2:end)],[T.node(2,T.parent(2:end));T.node(2,2:end)],'Color','k');
-patch([15,15,20,20],[15,20,20,15],'g')
-axis([-10,25,-10,25]);
-  </code></pre>
-  Again, this algorithm <em>is</em> probabilistically complete.  But after expanding 1000 nodes, the tree is basically a mess of node points all right on top of
-  each other:
-  <figure>
-    <img width="70%" data-src="figures/random_tree.svg"/>
-  </figure>
-  <p>We're nowhere close to the goal yet, and it's not exactly a hard problem.
-</p>
-
-</div>
-
-<p>
-While the idea of generating a tree of feasible points has clear advantages, we have lost
-the ability to cross off a node (and therefore a region of space) once it has been explored.
-It seems that, to make randomized algorithms effective, we are going to at the very least need some
-form of heuristic for encouraging the nodes to spread out and explore the space.
-</p>
-
-<section data-type="sect2"><h1>Rapidly-Exploring Random Trees (RRTs)</h1>
-
-<figure>
-  <img width="70%" data-src="figures/rrt.svg"/>
-</figure>
-
-  <figure>
-    <img width="90%" data-src="figures/rrt_basic.svg"/>
-    <figcaption>(<a href="figures/rrt_basic.swf">Click here to watch the animation</a>)</figcaption>
-  </figure>
-
-  <figure>
-    <img width="90%" data-src="figures/rrt_voronoi.svg"/>
-    <figcaption>(<a href="figures/rrt_voronoi.swf">Click here to watch the animation</a>)</figcaption>
-</figure>
+<!-- ***************  end of contact **************   -->
 
 
-</section>
-
-<section data-type="sect2"><h1>RRTs for robots with dynamics</h1>
-
-</section>
-
-<section data-type="sect2"><h1>Variations and extensions</h1>
-
-<p>Multi-query planning with PRMs, ...
-</p>
-
-<p>RRT*, RRT-sharp, RRTx,...  </p>
-
-<p>Complexity bounds and dispersion limits</p>
-
-</section>
-
-<section data-type="sect2"><h1>Discussion</h1>
-
-<p>Not sure yet whether randomness is fundamental here, or whether is a temporary "crutch"
-until we understand geometric and dynamic planning better.</p>
-
-</section>
-</section>
-
-<section data-type="sect1"><h1>Decomposition methods</h1>
-
-<p>Cell decomposition...</p>
-
-<p>Mixed-integer planning.</p>
-
-<p>Approximate decompositions for complex environments (e.g. IRIS)</p>
-
-</section>
-</section>
-
-<!-- ***************  end of feasible motion planning **************   -->
-
-
-
-<section data-type="chapter" class="chapter"
-         id="feedback_motion_planning"><h1>Feedback Motion
-  Planning</h1>
-
-</section>
-
-<!-- ***************  end of feedback motion planning **************   -->
-
-<section data-type="chapter" class="chapter" id="output"><h1>Output
-  Feedback</h1>
-
-</section>
-
-
-<!-- ***************  end of output feedback **************   -->
 
 <section data-type="chapter" class="chapter" id="robust"><h1>Robust and
   Stochastic
@@ -6717,6 +6761,7 @@ Uncertainty</h1>
 
   <todo>POMDP, SLAG, Belief-space sample-based planning, ...</todo>
 
+  <todo>iLQG (following LQG from Output Feedback chapter)</todo>
 </section>
 
 <!-- ***************  end of planning under uncertainty **************   -->
@@ -6750,7 +6795,7 @@ and Validation</h1>
 </section>
 
 <section data-type="chapter" class="chapter"
-         id="policy_search"><h1>Model-Free Policy Search</h1>
+         id="rl_policy_search"><h1>Model-Free Policy Search</h1>
 
   <p>Reinforcement learning (RL) is a collection of algorithms for solving the
   same optimal control problem that we've focused on through the text, but the
@@ -7407,8 +7452,7 @@ export PATH=/usr/local/opt/python/libexec/bin:${PATH}</code></pre></div>
     shows you how to tell <code>matplotlib</code> to perform well in the
     notebook (including with animations).</p>
 
-    <div><pre class="highlight"><code>cd underactuated/src/double_pendulum
-jupyter notebook simulator.ipynb</code></pre></div>
+    <jupyter>double_pendulum/simulator.ipynb</jupyter>
 
   </section>
 
@@ -8048,6 +8092,16 @@ jupyter notebook simulator.ipynb</code></pre></div>
 <section data-type="chapter" class="chapter"
          id="optimization"><h1>Optimization and
   Mathematical Programming</h1>
+
+  <section data-type="sect1"><h1>Optimization software</h1>
+
+    <p>We have a short introduction to mathematical programming in
+      <drake></drake> here.</p>
+
+      <jupyter>mathematical_program_examples.ipynb</jupyter>
+
+  </section>
+
 
   <section data-type="sect1"><h1>Nonlinear optimization</h1>
     <section data-type="sect2"><h1>General formulation</h1>

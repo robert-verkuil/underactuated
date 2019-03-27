@@ -1,7 +1,6 @@
 import math
 
-from pydrake.all import (Jacobian, MathematicalProgram, SolutionResult,
-                         Variables)
+from pydrake.all import Jacobian, MathematicalProgram, Solve
 
 
 def dynamics(x):
@@ -16,17 +15,18 @@ rho = prog.NewContinuousVariables(1, "rho")[0]
 V = x.dot(x)
 Vdot = Jacobian([V], x).dot(dynamics(x))[0]
 
-# Define the Lagrange multipliers.
-(lambda_, constraint) = prog.NewSosPolynomial(Variables(x), 4)
+# Define the Lagrange multiplier.
+lambda_ = prog.NewContinuousVariables(1, "lambda")[0]
+prog.AddConstraint(lambda_ >= 0)
 
-prog.AddSosConstraint((V-rho) * x.dot(x) - lambda_.ToExpression() * Vdot)
+prog.AddSosConstraint((V-rho) * x.dot(x) - lambda_ * Vdot)
 prog.AddLinearCost(-rho)
 
-result = prog.Solve()
+result = Solve(prog)
 
-assert(result == SolutionResult.kSolutionFound)
+assert(result.is_success())
 
-print("Verified that " + str(V) + " < " + str(prog.GetSolution(rho)) +
+print("Verified that " + str(V) + " < " + str(result.GetSolution(rho)) +
       " is in the region of attraction.")
 
-assert(math.fabs(prog.GetSolution(rho) - 1) < 1e-5)
+assert(math.fabs(result.GetSolution(rho) - 1) < 1e-5)

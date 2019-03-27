@@ -7,3 +7,5 @@ add_pytest(value_iteration.py)
 add_pytest(energy_swingup_and_balance.py --duration 1.0 --trials 2)
 
 add_pytest(dircol_swingup.py)
+
+add_pytest(global_sums_of_squares.py)
